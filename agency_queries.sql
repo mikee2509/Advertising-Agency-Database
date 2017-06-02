@@ -45,4 +45,27 @@ JOIN (SELECT A.contract_id AS ID, SUM(T.estimated_duration) AS time FROM assignm
 WHERE C.start_date < sysdate AND C.end_date > sysdate
 ORDER BY 1;
 
+--List all contracts with overdue invoices - show client's name and phone number, payable sum and total contract value
+SELECT x.contract_id, C.NAME AS CLIENT, C.phone_number, x.due_sum, A.total_value FROM contract A
+JOIN CLIENT C
+    ON A.client_id = C.ID
+JOIN (SELECT contract_id, SUM(VALUE) AS due_sum FROM invoice 
+        WHERE payment_deadline < sysdate AND payment_date IS NULL 
+        GROUP BY contract_id) x
+    ON A.ID = x.contract_id
+ORDER BY 1;
+
+
+--List all contracts with only one paid invoice
+SELECT contract_id FROM invoice
+WHERE payment_date IS NOT NULL
+GROUP BY contract_id
+HAVING COUNT(contract_id) = 1
+ORDER BY 1;
+
+
+--List all due invoices with the number of days remaining for payment
+SELECT ID AS invoice, contract_id, VALUE, floor(payment_deadline-sysdate) AS "DAYS REMAINING" FROM invoice
+WHERE payment_date IS NULL AND payment_deadline > sysdate
+ORDER BY 1;
 
