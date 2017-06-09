@@ -1,3 +1,4 @@
+---QUERIES---
 --Full address information of all employees
 SELECT E.first_name || ' ' || E.last_name AS NAME, A.street_address, A.postal_code, A.city, A.country
 FROM employee E JOIN address A ON E.address_id = A.ID
@@ -45,6 +46,7 @@ JOIN (SELECT A.contract_id AS ID, SUM(T.estimated_duration) AS time FROM assignm
 WHERE C.start_date < sysdate AND C.end_date > sysdate
 ORDER BY 1;
 
+
 --List all contracts with overdue invoices - show client's name and phone number, payable sum and total contract value
 SELECT x.contract_id, C.NAME AS CLIENT, C.phone_number, x.due_sum, A.total_value FROM contract A
 JOIN CLIENT C
@@ -69,3 +71,34 @@ SELECT ID AS invoice, contract_id, VALUE, floor(payment_deadline-sysdate) AS "DA
 WHERE payment_date IS NULL AND payment_deadline > sysdate
 ORDER BY 1;
 
+
+---INDEXES---
+EXECUTE DBMS_STATS.GATHER_TABLE_STATS ('msieczko','address');
+EXECUTE DBMS_STATS.GATHER_TABLE_STATS ('msieczko','assignment');
+EXECUTE DBMS_STATS.GATHER_TABLE_STATS ('msieczko','client');
+EXECUTE DBMS_STATS.GATHER_TABLE_STATS ('msieczko','contract');
+EXECUTE DBMS_STATS.GATHER_TABLE_STATS ('msieczko','employee');
+EXECUTE DBMS_STATS.GATHER_TABLE_STATS ('msieczko','invoice');
+EXECUTE DBMS_STATS.GATHER_TABLE_STATS ('msieczko','task');
+
+alter index invoice_pk visible;
+--alter index invoice_pk invisible;
+explain plan for
+select * from invoice where id between 1 and 556; --up to id=556 oracle optimizer uses index
+select * from table (dbms_xplan.display);
+
+
+/* invoice_idx1 -  invoice(ID, contract_id) *
+ * invoice_idx2 -  invoice(contract_id, ID) */
+alter index invoice_idx1 visible;
+alter index invoice_idx2 visible;
+--alter index invoice_idx1 invisible;
+--alter index invoice_idx2 invisible;
+explain plan for
+select * from invoice where id between 1 and 600 and contract_id = 10;
+select * from table (dbms_xplan.display);
+
+--Full table scan hint
+explain plan for
+select /*+ full(invoice) */ * from invoice where id between 1 and 600 and contract_id = 10;
+select * from table (dbms_xplan.display);

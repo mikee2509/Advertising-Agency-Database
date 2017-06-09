@@ -91,6 +91,10 @@ CREATE TABLE invoice (
 
 ALTER TABLE invoice ADD CONSTRAINT invoice_pk PRIMARY KEY ( id );
 
+CREATE INDEX invoice_idx1 ON  invoice(ID, contract_id);
+
+CREATE INDEX invoice_idx2 ON  invoice(contract_id, ID);
+
 CREATE TABLE task (
     id                   NUMBER(2) NOT NULL,
     description          VARCHAR2(100) NOT NULL,
